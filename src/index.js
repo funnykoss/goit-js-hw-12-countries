@@ -4,7 +4,7 @@ import countriesListMarkup from './templates/countriesList.hbs';
 import countryMarkup from './templates/countriesMarckup.hbs';
 import API from './js/fetchCountries';
 import debounce from 'lodash.debounce';
-import { notice, error } from '@pnotify/core';
+import { error } from '@pnotify/core';
 import '@pnotify/core/dist/PNotify.css';
 import '@pnotify/core/dist/BrightTheme.css';
 
