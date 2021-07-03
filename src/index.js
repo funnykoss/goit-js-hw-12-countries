@@ -1,58 +1,59 @@
 import './sass/main.scss';
-import './sass/main.scss';
-import countriesListMarkup from './templates/countriesList.hbs';
-import countryMarkup from './templates/countriesMarckup.hbs';
-import API from './js/fetchCountries';
 import debounce from 'lodash.debounce';
-import { error } from '@pnotify/core';
+import API from './js/fetchCountries';
+import countryList from './templates/countriesList.hbs';
+import countryCard from './templates/countriesMarckup.hbs';
+
 import '@pnotify/core/dist/PNotify.css';
 import '@pnotify/core/dist/BrightTheme.css';
+import { error } from '@pnotify/core';
 
 const cardContainer = document.querySelector('.card-container');
-const searchInput = document.querySelector('#clearme');
+const searchForm = document.querySelector('#clearme');
 
-searchInput.addEventListener('input', debounce(onSearch, 500));
+searchForm.addEventListener('input', debounce(countrySearch, 500));
 
-function onSearch() {
-  cardContainer.innerHTML = '';
-  const searchedCountry = searchInput.value;
+function countrySearch(e) {
+  e.preventDefault();
 
-  if (searchedCountry === '') return;
+  const form = e.target;
+  const searchQuery = form.value;
 
-  API.fetchCountry(searchedCountry).then(isFetchSucces).catch(onFetchErrorNoResults);
+  API.fetchCountry(searchQuery)
+    .then(renderCard)
+    .catch(onFetchError)
+    .finally(() => form.reset);
 }
 
-function renderCountryCard(template, country) {
-  const markup = template(country);
-  cardContainer.insertAdjacentHTML('beforeend', markup);
-}
-
-function onFetchErrorManyMatches() {
+function onFetchError() {
   error({
-    title: 'Too many matches found',
-    text: 'Please enter more specific query',
-    delay: 2000,
-    width: '500px',
+    text: 'Too many matches found. Please enter a more spesific query!',
+    delay: '2000',
+    maxTextHeight: null,
   });
 }
 
-function onFetchErrorNoResults() {
-  error({
-    title: 'Invalid name of country entered',
-    text: 'Please enter correct query',
-    delay: 2000,
-    width: '500px',
-  });
-}
+function renderCard(country) {
+  const pageNotFound = country.status === 404;
 
-function isFetchSucces(value) {
-  if (value.length > 10) {
-    onFetchErrorManyMatches();
-  } else if (value.length <= 10 && value.length > 1) {
-    renderCountryCard(countriesListMarkup, value);
-  } else if (value.length === 1) {
-    renderCountryCard(countryMarkup, value[0]);
-  } else {
-    onFetchErrorNoResults();
+  if (pageNotFound) {
+    cardContainer.innerHTML = '';
+    onFetchError();
+    return;
   }
+
+  if (country.length > 10) {
+    cardContainer.innerHTML = '';
+    onFetchError();
+    return;
+  }
+
+  if (country.length >= 2 && country.length <= 10) {
+    const markupList = countryList(country);
+    cardContainer.innerHTML = markupList;
+    return;
+  }
+
+  const markupCard = countryCard(country);
+  cardContainer.innerHTML = markupCard;
 }
